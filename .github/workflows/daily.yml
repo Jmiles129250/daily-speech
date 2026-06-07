@@ -33,7 +33,7 @@ jobs:
 
       - name: Generate today's speech
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_API_KEY: ${{ secrets.github }}
           LLM_API_BASE: ${{ secrets.LLM_API_BASE }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
         run: python scripts/generate_speech.py

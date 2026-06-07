@@ -7,8 +7,8 @@ with YAML frontmatter. Idempotent: if today's file already exists, exits 0.
 
 Environment variables:
   LLM_API_KEY   (required) - API key for the LLM provider
-  LLM_API_BASE  (optional) - base URL, default https://api.deepseek.com/v1
-  LLM_MODEL     (optional) - model name, default deepseek-chat
+  LLM_API_BASE  (optional) - base URL, default https://api.MiniMax.chat/v1
+  LLM_MODEL     (optional) - model name, default MiniMax-M2.5
 """
 from __future__ import annotations
 
@@ -28,8 +28,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SPEECHES_DIR = REPO_ROOT / "speeches"
 INDEX_FILE = SPEECHES_DIR / "index.json"
 
-LLM_API_BASE = os.environ.get("LLM_API_BASE", "https://api.deepseek.com/v1").rstrip("/")
-LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek-chat")
+LLM_API_BASE = os.environ.get("LLM_API_BASE", "https://api.MiniMax.chat/v1").rstrip("/")
+LLM_MODEL = os.environ.get("LLM_MODEL", "MiniMax-M2.5")
 
 # Beijing time (UTC+8) — no DST
 BEIJING_TZ = timezone(timedelta(hours=8))

@@ -8,9 +8,9 @@
 
 1. 打开 **Settings → Pages → Build and deployment**,把 **Source** 选为 **GitHub Actions**(不是 Deploy from a branch)。
 2. 打开 **Settings → Secrets and variables → Actions → New repository secret**,按需添加以下密钥:
-   - **`LLM_API_KEY`** —— 你的大模型 API Key。DeepSeek、通义千问、OpenAI、月之暗面、智谱等任何 OpenAI 兼容服务都可以。
-   - **`LLM_API_BASE`**（可选）—— 你的 API Base URL。不填默认 `https://api.deepseek.com/v1`。
-   - `LLM_MODEL`（可选）—— 默认 `deepseek-chat`，你也可以在 Variables 里加一个 `LLM_MODEL` 覆盖。
+   - **`github`** —— 你的大模型 API Key（在 Secrets 里 secret 名是 `github`，脚本会从这里读）。
+   - **`LLM_API_BASE`**（可选）—— 你的 API Base URL。不填默认 `https://api.MiniMax.chat/v1`。
+   - `LLM_MODEL`（可选）—— 默认 `MiniMax-M2.5`，你也可以在 Variables 里加一个 `LLM_MODEL` 覆盖。
 
    > 不需要再额外配 `GH_TOKEN`：workflow 已经使用 Actions 自动颁发的 `GITHUB_TOKEN`，工作流对仓库有 `contents: write` / `pages: write` / `id-token: write` 权限，开箱即用。
 3. 推送到 `main` 之后,工作流会在每天 **北京时间 06:30**(UTC 22:30)自动运行;你也可以在 **Actions → Generate and Deploy Daily Speech → Run workflow** 里手动触发一次,立即生成今天的演讲稿并部署。
@@ -57,6 +57,12 @@
    - 写入 `speeches/index.json` 和 `speeches/manifest.json`(同结构,后者给前端)。
 5. **自动提交**:`stefanzweifel/git-auto-commit-action` 提交 `speeches/**`。
 6. **部署**:`actions/deploy-pages` 把整个仓库作为静态站点部署到 GitHub Pages。
+
+## 当前默认配置
+
+- **模型**:`MiniMax-M2.5`(可在 repo 的 Variables 里加 `LLM_MODEL` 覆盖)
+- **Base URL**:`https://api.MiniMax.chat/v1`(可在 Secrets 里加 `LLM_API_BASE` 覆盖)
+- **API Key**:从 Secrets 的 `github` 项读取
 
 ## 常见问题
 
