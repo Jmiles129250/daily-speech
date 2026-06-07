@@ -1,4 +1,4 @@
-name: Generate and Deploy Daily Speech
+name: Generate Daily Speech
 
 on:
   schedule:
@@ -8,13 +8,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
-
-# Prevent overlapping deploys; allow generate jobs to keep running.
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   generate:
@@ -22,6 +15,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Always start from the latest main; if the previous run's commit
+          # is stale, this refreshes it before we generate.
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -54,25 +51,3 @@ jobs:
           WECHAT_WEBHOOK: ${{ secrets.WECHAT_WEBHOOK }}
         run: python scripts/notify.py
 
-  deploy:
-    needs: generate
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "."
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
