@@ -61,7 +61,8 @@
 ## 当前默认配置
 
 - **模型**:`MiniMax-M2.5`(可在 repo 的 Variables 里加 `LLM_MODEL` 覆盖)
-- **Base URL**:`https://api.MiniMax.chat/v1`(可在 Secrets 里加 `LLM_API_BASE` 覆盖)
+- **Base URL**:`https://api.minimaxi.com/v1`(MiniMax 国内端点,可在 Secrets 里加 `LLM_API_BASE` 覆盖;国际版用 `https://api.minimax.chat/v1`)
+- **API 路径**:`/text/chatcompletion_v2`(MiniMax 专有路径,默认就是;可加 `LLM_API_PATH` 覆盖)
 - **API Key**:从 Secrets 的 `github` 项读取
 
 ## 常见问题
