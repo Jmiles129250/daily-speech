@@ -34,8 +34,8 @@ jobs:
       - name: Generate today's speech
         env:
           LLM_API_KEY: ${{ secrets.github }}
-          LLM_API_BASE: ${{ secrets.LLM_API_BASE }}
-          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_API_BASE: ${{ secrets.LLM_API_BASE || 'https://api.MiniMax.chat/v1' }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'MiniMax-M2.5' }}
         run: python scripts/generate_speech.py
 
       - name: Build index
