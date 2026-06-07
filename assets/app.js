@@ -2,9 +2,12 @@
   "use strict";
 
   var root = document.getElementById("speeches");
+  var searchInput = document.getElementById("search-input");
+  var searchStatus = document.getElementById("search-status");
   if (!root) return;
 
-  // Asia/Shanghai today as YYYY-MM-DD
+  // --- time helpers ---------------------------------------------------------
+
   function todayInShanghai() {
     var parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Shanghai",
@@ -18,9 +21,8 @@
     return y + "-" + m + "-" + d;
   }
 
-  // Tiny markdown -> HTML
-  // Supports: # h1 (stripped as title), ## h2, > blockquote, **bold**
-  // Paragraphs separated by blank lines.
+  // --- escape / highlight helpers ------------------------------------------
+
   function escapeHtml(s) {
     return s
       .replace(/&/g, "&amp;")
@@ -30,44 +32,67 @@
       .replace(/'/g, "&#39;");
   }
 
-  function renderInline(text) {
-    var escaped = escapeHtml(text);
-    // bold
-    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, "<em>$1</em>");
-    return escaped;
+  function escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  function renderMarkdown(body) {
+  /**
+   * Highlight non-overlapping matches of `keywords` inside `text` (case-insensitive).
+   * `text` and keywords are assumed already lowercased for the matching step, but
+   * we render with original casing intact.
+   */
+  function highlight(text, keywords) {
+    if (!keywords.length) return escapeHtml(text);
+    var pattern = keywords.map(escapeRegex).join("|");
+    var re = new RegExp("(" + pattern + ")", "gi");
+    var out = "";
+    var last = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      out += escapeHtml(text.slice(last, m.index));
+      out += "<mark>" + escapeHtml(m[0]) + "</mark>";
+      last = m.index + m[0].length;
+      if (m.index === re.lastIndex) re.lastIndex++; // avoid zero-width
+    }
+    out += escapeHtml(text.slice(last));
+    return out;
+  }
+
+  function renderInline(text, keywords) {
+    var escaped = escapeHtml(text);
+    if (!keywords.length) return escaped;
+    var pattern = keywords.map(escapeRegex).join("|");
+    var re = new RegExp("(" + pattern + ")", "gi");
+    return escaped.replace(re, "<mark>$1</mark>");
+  }
+
+  function renderMarkdown(body, keywords) {
     if (!body) return "";
     var lines = body.replace(/\r\n/g, "\n").split("\n");
     var out = [];
-    var inBlock = false;
     var blockLines = [];
 
     function flushBlock() {
       if (blockLines.length) {
-        var inner = blockLines.map(renderInline).join("<br />");
+        var inner = blockLines
+          .map(function (l) { return renderInline(l, keywords); })
+          .join("<br />");
         out.push("<blockquote>" + inner + "</blockquote>");
       }
       blockLines = [];
-      inBlock = false;
     }
 
     for (var i = 0; i < lines.length; i++) {
       var raw = lines[i];
       var line = raw.replace(/\s+$/g, "");
 
-      if (line.indexOf("# ") === 0) {
-        // leading title line: skip (title comes from frontmatter)
-        continue;
-      }
+      if (line.indexOf("# ") === 0) continue; // strip leading title
       if (line.indexOf("## ") === 0) {
         flushBlock();
-        out.push("<h2>" + renderInline(line.slice(3)) + "</h2>");
+        out.push("<h2>" + renderInline(line.slice(3), keywords) + "</h2>");
         continue;
       }
       if (line.indexOf("> ") === 0) {
-        inBlock = true;
         blockLines.push(line.slice(2));
         continue;
       }
@@ -76,13 +101,52 @@
         continue;
       }
       flushBlock();
-      out.push("<p>" + renderInline(line) + "</p>");
+      out.push("<p>" + renderInline(line, keywords) + "</p>");
     }
     flushBlock();
     return out.join("\n");
   }
 
-  function makeCard(entry, opts) {
+  // --- body fetch + cache --------------------------------------------------
+
+  var bodyCache = Object.create(null); // file -> Promise<{title, body}>
+
+  function loadSpeechBody(file) {
+    if (bodyCache[file]) return bodyCache[file];
+    var p = fetch(file + "?v=2", { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.text();
+      })
+      .then(function (md) {
+        var body = md;
+        var title = "";
+        if (md.indexOf("---") === 0) {
+          var end = md.indexOf("\n---", 3);
+          if (end > -1) {
+            var fm = md.slice(3, end);
+            var t = fm.match(/^title:\s*(.+)$/m);
+            if (t) title = t[1].trim();
+            body = md.slice(end + 4).replace(/^\s*\n/, "");
+          }
+        }
+        return { title: title, body: body };
+      });
+    bodyCache[file] = p;
+    return p;
+  }
+
+  // --- card model ----------------------------------------------------------
+
+  var state = {
+    entries: [],
+    today: todayInShanghai(),
+    cards: new Map(), // date -> {el, entry, body, isToday}
+    searchTokens: [],
+    searchActive: false,
+  };
+
+  function makeCardEl(entry, opts) {
     var isToday = !!opts.isToday;
     var card = document.createElement("article");
     card.className = "card" + (isToday ? " expanded" : "");
@@ -140,81 +204,183 @@
     }
     card.appendChild(body);
 
-    // toggle handler
-    function toggle() {
-      var expanded = card.classList.toggle("expanded");
-      if (expanded) {
+    function expand(rendered) {
+      inner.innerHTML = rendered;
+      card.classList.add("expanded");
+      // two-frame to allow CSS transition to read scrollHeight
+      requestAnimationFrame(function () {
         body.style.maxHeight = body.scrollHeight + "px";
-      } else {
-        body.style.maxHeight = "0px";
+      });
+    }
+
+    function collapse() {
+      card.classList.remove("expanded");
+      body.style.maxHeight = "0px";
+    }
+
+    // toggle
+    function toggle() {
+      if (card.classList.contains("expanded")) {
+        collapse();
+        return;
       }
+      loadSpeechBody(entry.file).then(function (r) {
+        expand(renderMarkdown(r.body, []));
+      });
     }
     header.addEventListener("click", toggle);
     excerpt.addEventListener("click", toggle);
 
-    // load body on demand (and on initial expand if today)
-    var loaded = false;
-    function ensureLoaded(cb) {
-      if (loaded) return cb();
-      loaded = true;
-      var url = entry.file + "?v=1";
-      fetch(url, { cache: "no-store" })
-        .then(function (r) {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.text();
-        })
-        .then(function (md) {
-          // split frontmatter
-          var body = md;
-          if (md.indexOf("---") === 0) {
-            var end = md.indexOf("\n---", 3);
-            if (end > -1) {
-              body = md.slice(end + 4).replace(/^\s*\n/, "");
-            }
-          }
-          inner.innerHTML = renderMarkdown(body);
-          cb();
-        })
-        .catch(function (err) {
-          inner.innerHTML =
-            '<p style="color:#a33">内容加载失败：' +
-            escapeHtml(String(err)) +
-            "</p>";
-          cb();
-        });
-    }
-
-    if (isToday) {
-      // expand today on first paint
-      ensureLoaded(function () {
-        // give the layout a tick to settle
-        requestAnimationFrame(function () {
-          body.style.maxHeight = body.scrollHeight + "px";
-        });
-      });
-    } else {
-      // load lazily when user expands
-      var origToggle = toggle;
-      header.removeEventListener("click", toggle);
-      excerpt.removeEventListener("click", toggle);
-      function lazyToggle() {
-        var willExpand = !card.classList.contains("expanded");
-        if (willExpand) {
-          ensureLoaded(function () {
-            card.classList.add("expanded");
-            body.style.maxHeight = body.scrollHeight + "px";
-          });
-        } else {
-          card.classList.remove("expanded");
-          body.style.maxHeight = "0px";
+    return {
+      el: card,
+      entry: entry,
+      isToday: isToday,
+      titleEl: title,
+      excerptEl: excerpt,
+      innerEl: inner,
+      bodyEl: body,
+      expand: expand,
+      collapse: collapse,
+      setHighlight: function (keywords) {
+        title.innerHTML = keywords.length
+          ? highlight(entry.title, keywords)
+          : escapeHtml(entry.title);
+        if (excerpt) {
+          excerpt.innerHTML = keywords.length
+            ? highlight(entry.excerpt, keywords)
+            : escapeHtml(entry.excerpt);
         }
-      }
-      header.addEventListener("click", lazyToggle);
-      excerpt.addEventListener("click", lazyToggle);
+      },
+      renderBody: function (body, keywords) {
+        inner.innerHTML = renderMarkdown(body, keywords);
+        if (keywords.length) {
+          card.classList.add("is-hit");
+        } else {
+          card.classList.remove("is-hit");
+        }
+      },
+      setBodyHeight: function () {
+        if (card.classList.contains("expanded")) {
+          body.style.maxHeight = body.scrollHeight + "px";
+        }
+      },
+    };
+  }
+
+  // --- search --------------------------------------------------------------
+
+  function parseQuery(q) {
+    return (q || "")
+      .toLowerCase()
+      .split(/\s+/)
+      .map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.length > 0; });
+  }
+
+  function entryMatches(entry, body, tokens) {
+    if (!tokens.length) return true;
+    var haystack = (
+      entry.date +
+      " " +
+      entry.title +
+      " " +
+      (entry.excerpt || "") +
+      " " +
+      (body || "")
+    ).toLowerCase();
+    for (var i = 0; i < tokens.length; i++) {
+      if (haystack.indexOf(tokens[i]) === -1) return false;
+    }
+    return true;
+  }
+
+  function setStatus(text) {
+    if (!searchStatus) return;
+    if (!text) {
+      searchStatus.textContent = "";
+      return;
+    }
+    searchStatus.innerHTML = text;
+  }
+
+  function applySearch() {
+    var tokens = state.searchTokens;
+    var active = tokens.length > 0;
+    state.searchActive = active;
+
+    if (!active) {
+      // restore default
+      setStatus("");
+      state.cards.forEach(function (card) {
+        card.el.style.display = "";
+        card.setHighlight([]);
+        // if body was rendered with highlights, re-render plain and restore expand state
+        if (card.bodyLoaded) {
+          loadSpeechBody(card.entry.file).then(function (r) {
+            card.renderBody(r.body, []);
+            card.setBodyHeight();
+          });
+        }
+        if (card.isToday) {
+          if (!card.bodyLoaded) {
+            loadSpeechBody(card.entry.file).then(function (r) {
+              card.renderBody(r.body, []);
+              card.setBodyHeight();
+              card.bodyLoaded = true;
+            });
+          } else {
+            card.setBodyHeight();
+          }
+        } else {
+          card.collapse();
+        }
+      });
+      return;
     }
 
-    return card;
+    // active search: for each card, fetch body if needed, render with highlights,
+    // expand on hit, hide on miss.
+    var hits = 0;
+    var pending = [];
+    state.cards.forEach(function (card) {
+      var p = loadSpeechBody(card.entry.file).then(function (r) {
+        var matched = entryMatches(card.entry, r.body, tokens);
+        if (matched) {
+          hits++;
+          card.el.style.display = "";
+          card.setHighlight(tokens);
+          card.renderBody(r.body, tokens);
+          card.el.classList.add("expanded");
+          card.setBodyHeight();
+          card.bodyLoaded = true;
+        } else {
+          card.el.style.display = "none";
+        }
+      });
+      pending.push(p);
+    });
+    Promise.all(pending).then(function () {
+      if (hits === 0) {
+        setStatus("没有找到匹配的演讲稿。");
+      } else if (hits === 1) {
+        setStatus("找到 <span class=\"count\">1</span> 篇匹配的演讲稿。");
+      } else {
+        setStatus("找到 <span class=\"count\">" + hits + "</span> 篇匹配的演讲稿。");
+      }
+    });
   }
+
+  // debounce
+  var searchTimer = null;
+  function onSearchInput() {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () {
+      state.searchTokens = parseQuery(searchInput.value);
+      applySearch();
+    }, 180);
+  }
+
+  // --- bootstrap -----------------------------------------------------------
 
   function showEmpty(msg) {
     root.innerHTML = "";
@@ -226,7 +392,8 @@
 
   function bootstrap() {
     var today = todayInShanghai();
-    fetch("speeches/manifest.json?v=1", { cache: "no-store" })
+    state.today = today;
+    fetch("speeches/manifest.json?v=2", { cache: "no-store" })
       .then(function (r) {
         if (r.status === 404) {
           showEmpty("暂无内容，等待每日 06:30 自动生成。");
@@ -245,11 +412,27 @@
           showEmpty("暂无内容，等待每日 06:30 自动生成。");
           return;
         }
+        state.entries = entries;
         root.innerHTML = "";
         entries.forEach(function (entry) {
           var isToday = entry.date === today;
-          root.appendChild(makeCard(entry, { isToday: isToday }));
+          var card = makeCardEl(entry, { isToday: isToday });
+          state.cards.set(entry.date, card);
+          root.appendChild(card.el);
+          if (isToday) {
+            // pre-render today
+            loadSpeechBody(entry.file).then(function (r) {
+              card.renderBody(r.body, []);
+              card.setBodyHeight();
+              card.bodyLoaded = true;
+            });
+          }
         });
+        // wire search after first paint
+        if (searchInput) {
+          searchInput.addEventListener("input", onSearchInput);
+          searchInput.addEventListener("search", onSearchInput);
+        }
       })
       .catch(function (err) {
         showEmpty("加载失败：" + (err && err.message ? err.message : err));

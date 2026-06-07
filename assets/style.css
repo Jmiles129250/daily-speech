@@ -35,7 +35,54 @@ header h1 {
 .subtitle {
   color: var(--muted);
   font-size: 14px;
-  margin: 4px 0 32px;
+  margin: 4px 0 24px;
+}
+
+#search-bar {
+  margin: 0 0 24px;
+}
+
+#search-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+#search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--muted);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M18 6L6 18M6 6l12 12' stroke='black' stroke-width='2' fill='none'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M18 6L6 18M6 6l12 12' stroke='black' stroke-width='2' fill='none'/></svg>") center/contain no-repeat;
+  cursor: pointer;
+}
+
+#search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47, 125, 107, 0.12);
+}
+
+.search-status {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 8px 2px 0;
+  min-height: 1.2em;
+}
+
+.search-status .count {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 #speeches {
@@ -168,6 +215,20 @@ header h1 {
   color: var(--accent);
   font-style: normal;
   font-weight: 600;
+}
+
+.card-body mark,
+.card-title mark,
+.excerpt mark {
+  background: rgba(47, 125, 107, 0.18);
+  color: var(--accent);
+  font-weight: 600;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.card.is-hit {
+  border-color: rgba(47, 125, 107, 0.35);
 }
 
 footer {
