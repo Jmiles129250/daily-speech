@@ -1,0 +1,74 @@
+name: Generate and Deploy Daily Speech
+
+on:
+  schedule:
+    # 22:30 UTC = 06:30 Beijing (Asia/Shanghai, UTC+8)
+    - cron: "30 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Prevent overlapping deploys; allow generate jobs to keep running.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate today's speech
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_API_BASE: ${{ secrets.LLM_API_BASE }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+        run: python scripts/generate_speech.py
+
+      - name: Build index
+        run: python scripts/build_index.py
+
+      - name: Commit speech files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          file_pattern: "speeches/**"
+          commit_message: "speech: ${{ github.event.head_commit.message }}"
+          token: ${{ secrets.GH_TOKEN }}
+
+  deploy:
+    needs: generate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
