@@ -4,46 +4,62 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>每日演讲</title>
+    <meta name="theme-color" content="#f8f5ef" />
+    <meta name="description" content="每天清晨 6:30 自动生成的 5 分钟中文演讲稿，配合你的演讲口才训练。" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="assets/style.css?v=3" />
+    <link rel="stylesheet" href="assets/style.css?v=4" />
   </head>
   <body>
-    <main id="app">
-      <header>
-        <h1>每日演讲</h1>
-        <p class="subtitle">为讲口才而生 · 每日清晨 06:30 自动更新</p>
-      </header>
-      <section id="search-bar">
-        <input
-          id="search-input"
-          type="search"
-          placeholder="搜索历史演讲稿（标题、日期、正文关键字）"
-          autocomplete="off"
-          spellcheck="false"
-        />
+    <header class="hero" role="banner">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="hero-overlay" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <p class="hero-eyebrow">DAILY SPEECH</p>
+        <h1 class="hero-title">每日演讲</h1>
+        <p class="hero-subtitle">为讲口才而生 · 每日清晨 06:30 自动更新</p>
+      </div>
+    </header>
+
+    <main id="app" class="app">
+      <section class="toolbar" aria-label="工具栏">
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="搜索历史演讲稿（标题、日期、正文关键字）"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
         <p id="search-status" class="search-status" aria-live="polite"></p>
+        <section id="collection-bar" aria-label="合集筛选" class="collection-bar"></section>
       </section>
-      <section id="collection-bar" aria-label="合集筛选"></section>
-      <section id="speeches" aria-live="polite"></section>
-      <footer>
+
+      <section id="speeches" class="speeches" aria-live="polite"></section>
+
+      <footer class="site-footer">
         <p>
           为讲口才而生 · 每日清晨 06:30 自动更新 ·
-          <a href="https://github.com/Jmiles129250/daily-speech" target="_blank" rel="noopener"
-            >仓库地址</a
-          >
+          <a href="https://github.com/Jmiles129250/daily-speech" target="_blank" rel="noopener">仓库地址</a>
         </p>
+        <p class="footer-meta">© Daily Speech · 每天一篇 5 分钟演讲</p>
       </footer>
     </main>
+
     <noscript>
       <p style="text-align: center; color: #7a7a7a; padding: 24px">
         本网站需要启用 JavaScript 才能浏览。
       </p>
     </noscript>
-    <script src="assets/app.js?v=3" defer></script>
+    <script src="assets/app.js?v=4" defer></script>
   </body>
 </html>

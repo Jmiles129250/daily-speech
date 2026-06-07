@@ -1,56 +1,202 @@
+/* ============================================================
+   每日演讲 — Apple-inspired styles
+   System fonts first, Noto Serif SC for body text (readable when
+   speaking aloud), Inter for UI.
+   ============================================================ */
+
 :root {
-  --bg: #f8f5ef;
-  --fg: #2a2a2a;
-  --muted: #7a7a7a;
-  --accent: #2f7d6b;
+  /* Palette: warm off-white, soft ink, muted teal accent. */
+  --bg: #f5f1ea;
+  --bg-elevated: rgba(255, 255, 255, 0.72);
+  --fg: #1d1d1f;
+  --fg-soft: #424245;
+  --muted: #86868b;
+  --accent: #1f7a6b;
+  --accent-soft: #d6ece7;
   --card: #ffffff;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
-  --border: #ece6da;
+  --card-hover: #fbfaf7;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.08);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", "Source Han Serif SC",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", serif;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
-  font-family: "Noto Serif SC", "Songti SC", "Source Han Serif SC", serif;
-  background: var(--bg);
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--fg);
-  line-height: 1.9;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 48px 24px 96px;
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-header h1 {
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   Hero (header with background image)
+   ============================================================ */
+
+.hero {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .hero {
+    height: 260px;
+  }
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url("img/0.jpg");
+  background-size: cover;
+  background-position: center;
+  /* subtle zoom-out so the image never feels busy behind text */
+  transform: scale(1.04);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(20, 28, 32, 0.18) 0%, rgba(20, 28, 32, 0.55) 100%),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%);
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 24px;
+  max-width: 720px;
+}
+
+.hero-eyebrow {
+  margin: 0 0 12px;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 56px;
   letter-spacing: 0.04em;
-  margin: 0 0 4px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-  font-size: 28px;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.18);
 }
 
-.subtitle {
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 42px;
+  }
+}
+
+.hero-subtitle {
+  margin: 14px 0 0;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* ============================================================
+   App container
+   ============================================================ */
+
+.app {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+}
+
+@media (max-width: 480px) {
+  .app {
+    padding: 24px 16px 64px;
+  }
+}
+
+/* ============================================================
+   Toolbar: search + collection chips
+   ============================================================ */
+
+.toolbar {
+  margin-bottom: 24px;
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  width: 18px;
+  height: 18px;
   color: var(--muted);
-  font-size: 14px;
-  margin: 4px 0 24px;
-}
-
-#search-bar {
-  margin: 0 0 24px;
+  pointer-events: none;
 }
 
 #search-input {
   width: 100%;
-  padding: 12px 16px;
-  font-size: 15px;
+  padding: 14px 18px 14px 46px;
   font-family: inherit;
+  font-size: 16px;
   color: var(--fg);
-  background: var(--card);
+  background: var(--bg-elevated);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   -webkit-appearance: none;
@@ -70,13 +216,13 @@ header h1 {
 
 #search-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(47, 125, 107, 0.12);
+  box-shadow: 0 0 0 4px rgba(31, 122, 107, 0.15);
 }
 
 .search-status {
-  color: var(--muted);
+  margin: 10px 4px 0;
   font-size: 13px;
-  margin: 8px 2px 0;
+  color: var(--muted);
   min-height: 1.2em;
 }
 
@@ -85,37 +231,40 @@ header h1 {
   font-weight: 600;
 }
 
-#collection-bar {
+.collection-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 0 0 24px;
-  align-items: center;
+  margin-top: 14px;
 }
 
 .collection-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--card);
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
   border: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--fg-soft);
+  font-size: 13.5px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .collection-chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--border-strong);
+  color: var(--fg);
 }
 
 .collection-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--fg);
+  border-color: var(--fg);
   color: #fff;
 }
 
@@ -128,154 +277,175 @@ header h1 {
 }
 
 .collection-chip.active .dot {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .collection-chip .count {
   font-size: 12px;
   opacity: 0.7;
+  font-weight: 500;
 }
 
-.collection-label {
-  display: inline-block;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--chip-bg, rgba(47, 125, 107, 0.1));
-  color: var(--chip-fg, var(--accent));
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  margin-left: 8px;
-}
+/* ============================================================
+   Speech cards
+   ============================================================ */
 
-#speeches {
+.speeches {
   display: flex;
   flex-direction: column;
+  gap: 18px;
 }
 
 .empty {
   text-align: center;
   color: var(--muted);
-  padding: 48px 16px;
-  font-size: 15px;
+  padding: 64px 16px;
+  font-size: 16px;
 }
 
 .card {
   background: var(--card);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  padding: 24px 28px;
-  margin: 16px 0;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-  cursor: pointer;
-  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .card:hover {
-  border-color: #e6dfd0;
   transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
+}
+
+.card.is-hit {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(31, 122, 107, 0.12), var(--shadow-md);
 }
 
 .card-header {
+  padding: 22px 26px 18px;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
 .card-title {
+  margin: 0;
+  font-family: var(--font-serif);
   font-weight: 600;
-  font-size: 20px;
+  font-size: 22px;
+  line-height: 1.35;
   color: var(--fg);
-  line-height: 1.4;
+  letter-spacing: 0.01em;
 }
 
 .card-date {
-  color: var(--muted);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.chevron {
-  transition: transform 0.2s ease;
+  font-size: 13px;
   color: var(--muted);
-  font-size: 14px;
-  user-select: none;
-}
-
-.card.expanded .chevron {
-  transform: rotate(180deg);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 6px;
 }
 
 .today-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
   background: var(--accent);
   color: #fff;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.collection-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg, rgba(31, 122, 107, 0.12));
+  color: var(--chip-fg, var(--accent));
   white-space: nowrap;
 }
 
 .excerpt {
+  margin: 0 26px 4px;
+  font-size: 14.5px;
   color: var(--muted);
-  font-size: 14px;
-  margin-top: 8px;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Body area — the actual speech, larger for live reading. */
 .card-body {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.35s ease;
-  color: #3a3a3a;
-}
-
-.card.expanded .card-body {
-  /* max-height is set inline by app.js to scrollHeight */
+  transition: max-height 0.4s ease;
 }
 
 .card-body-inner {
-  padding-top: 16px;
-  border-top: 1px dashed var(--border);
-  margin-top: 16px;
+  padding: 0 32px 32px;
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 2.05;
+  color: var(--fg-soft);
+  letter-spacing: 0.01em;
   white-space: pre-wrap;
-  font-size: 16px;
 }
 
-.card-body h2 {
-  font-size: 18px;
-  margin: 24px 0 8px;
+.card-body-inner > *:first-child {
+  margin-top: 18px;
+}
+
+.card-body-inner p {
+  margin: 0 0 18px;
+}
+
+.card-body-inner h2 {
+  font-family: var(--font-serif);
+  font-size: 22px;
   font-weight: 600;
+  color: var(--fg);
+  margin: 28px 0 12px;
+  letter-spacing: 0.01em;
 }
 
-.card-body p {
-  margin: 0 0 16px;
-}
-
-.card-body blockquote {
+.card-body-inner blockquote {
   border-left: 3px solid var(--accent);
-  padding-left: 16px;
-  color: #555;
-  margin: 16px 0;
+  padding: 4px 0 4px 18px;
+  margin: 20px 0;
+  color: var(--fg-soft);
   font-style: italic;
 }
 
-.card-body em {
+.card-body-inner em {
   color: var(--accent);
   font-style: normal;
   font-weight: 600;
@@ -284,46 +454,86 @@ header h1 {
 .card-body mark,
 .card-title mark,
 .excerpt mark {
-  background: rgba(47, 125, 107, 0.18);
+  background: rgba(31, 122, 107, 0.18);
   color: var(--accent);
   font-weight: 600;
-  padding: 0 2px;
-  border-radius: 2px;
+  padding: 0 3px;
+  border-radius: 3px;
 }
 
-.card.is-hit {
-  border-color: rgba(47, 125, 107, 0.35);
+.chevron {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.25s ease, color 0.18s ease;
+  margin-left: 8px;
+  padding-top: 8px;
 }
 
-footer {
+.card.expanded .chevron {
+  transform: rotate(180deg);
+  color: var(--fg);
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+
+.site-footer {
+  margin-top: 72px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
   text-align: center;
   color: var(--muted);
   font-size: 13px;
-  margin-top: 64px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
 }
 
-footer a {
+.site-footer p {
+  margin: 4px 0;
+}
+
+.site-footer a {
   color: var(--accent);
-  text-decoration: none;
 }
 
-footer a:hover {
-  text-decoration: underline;
+.footer-meta {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 6px !important;
+}
+
+/* ============================================================
+   Reading-mode: when the user clicks "今日" the body is open.
+   We add a subtle reading-friendly layout: no max-width squeeze,
+   generous margins, and a slightly larger base font in body-inner
+   for the currently-expanded card.
+   ============================================================ */
+
+.card.expanded .card-body-inner {
+  padding-left: 36px;
+  padding-right: 36px;
+  font-size: 20px;
+  line-height: 2.15;
 }
 
 @media (max-width: 480px) {
-  body {
-    padding: 24px 16px 64px;
+  .card-header {
+    padding: 18px 20px 14px;
   }
-  .card {
-    padding: 18px 20px;
+  .excerpt {
+    margin: 0 20px 4px;
   }
-  header h1 {
-    font-size: 24px;
+  .card-body-inner {
+    padding: 0 22px 24px;
+    font-size: 17px;
+    line-height: 1.95;
+  }
+  .card.expanded .card-body-inner {
+    padding-left: 24px;
+    padding-right: 24px;
+    font-size: 18px;
   }
   .card-title {
-    font-size: 18px;
+    font-size: 19px;
   }
 }
