@@ -47,6 +47,13 @@ jobs:
           file_pattern: "speeches/**"
           commit_message: "speech: ${{ github.event.head_commit.message }}"
 
+      - name: Notify WeChat (Server 酱 or WeCom bot)
+        if: always() && success()
+        env:
+          WECHAT_SENDKEY: ${{ secrets.WECHAT_SENDKEY }}
+          WECHAT_WEBHOOK: ${{ secrets.WECHAT_WEBHOOK }}
+        run: python scripts/notify.py
+
   deploy:
     needs: generate
     runs-on: ubuntu-latest

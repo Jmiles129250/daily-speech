@@ -13,6 +13,23 @@
    - `LLM_MODEL`（可选）—— 默认 `MiniMax-M2.5`，你也可以在 Variables 里加一个 `LLM_MODEL` 覆盖。
 
    > 不需要再额外配 `GH_TOKEN`：workflow 已经使用 Actions 自动颁发的 `GITHUB_TOKEN`，工作流对仓库有 `contents: write` / `pages: write` / `id-token: write` 权限，开箱即用。
+
+3. （可选）**微信推送**：每天演讲稿生成完毕后往你的微信推一条。脚本同时支持 Server 酱（推荐，个人微信直接收）和企业微信群机器人，二选一即可。
+   - **方案 A — Server 酱（推荐，5 分钟搞定）**
+     1. 打开 https://sct.ftqq.com/ 用微信扫码登录
+     2. 微信扫码绑定「方糖」服务号
+     3. 复制 **SendKey**（形如 `SCT...`）
+     4. 回到 GitHub repo → Settings → Secrets → New secret：
+        - Name: `WECHAT_SENDKEY`
+        - Secret: 粘上你的 SendKey
+   - **方案 B — 企业微信群机器人**
+     1. 在企业微信里建一个群（或用现有群）
+     2. 群设置 → 群机器人 → 添加 → 拿到一个 webhook URL（形如 `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...`）
+     3. 回到 GitHub repo → Settings → Secrets → New secret：
+        - Name: `WECHAT_WEBHOOK`
+        - Secret: 粘上完整 webhook URL
+   - 两个都填也能跑，Server 酱会优先。
+   - 都不填也能跑，推送步骤会跳过，不影响生成和部署。
 3. 推送到 `main` 之后,工作流会在每天 **北京时间 06:30**(UTC 22:30)自动运行;你也可以在 **Actions → Generate and Deploy Daily Speech → Run workflow** 里手动触发一次,立即生成今天的演讲稿并部署。
 
 ## 访问地址
@@ -64,6 +81,16 @@
 - **Base URL**:`https://api.minimaxi.com/v1`(MiniMax 国内端点,可在 Secrets 里加 `LLM_API_BASE` 覆盖;国际版用 `https://api.minimax.chat/v1`)
 - **API 路径**:`/text/chatcompletion_v2`(MiniMax 专有路径,默认就是;可加 `LLM_API_PATH` 覆盖)
 - **API Key**:从 Secrets 的 `github` 项读取
+
+## 推送样例（Server 酱 / 企业微信）
+
+每天演讲稿生成并部署完成后，会推送一条消息，类似：
+
+> **每日演讲 · 人生的加分项**
+> 1997年夏天，安徽一个小村庄里，一个十八岁的少年蹲在田埂上……
+> 👉 [打开每日演讲](https://Jmiles129250.github.io/daily-speech/)
+
+企业微信会渲染为 Markdown 卡片，Server 酱会发到「方糖」公众号，再转发到你的个人微信。
 
 ## 常见问题
 
