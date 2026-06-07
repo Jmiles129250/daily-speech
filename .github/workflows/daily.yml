@@ -22,8 +22,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -48,7 +46,6 @@ jobs:
         with:
           file_pattern: "speeches/**"
           commit_message: "speech: ${{ github.event.head_commit.message }}"
-          token: ${{ secrets.GH_TOKEN }}
 
   deploy:
     needs: generate
