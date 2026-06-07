@@ -111,6 +111,7 @@ def main() -> int:
                 "title": title,
                 "file": rel,
                 "excerpt": excerpt,
+                "collection": meta.get("collection", "default"),
             }
         )
 

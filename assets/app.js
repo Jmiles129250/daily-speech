@@ -8,6 +8,15 @@
 
   // --- time helpers ---------------------------------------------------------
 
+  function hexToBg(hex) {
+    // Convert "#rrggbb" to "rgba(r, g, b, 0.1)" for soft background tints.
+    if (!hex || hex[0] !== "#" || hex.length !== 7) return "rgba(47, 125, 107, 0.1)";
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return "rgba(" + r + ", " + g + ", " + b + ", 0.12)";
+  }
+
   function todayInShanghai() {
     var parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Shanghai",
@@ -111,6 +120,73 @@
 
   var bodyCache = Object.create(null); // file -> Promise<{title, body}>
 
+  // --- collections ---------------------------------------------------------
+
+  function buildCollectionBar() {
+    var bar = document.getElementById("collection-bar");
+    if (!bar) return;
+    bar.innerHTML = "";
+
+    var counts = computeCollectionCounts();
+    var items = [{ name: "__all__", label: "全部", color: null, count: state.entries.length }];
+    state.collections.forEach(function (c) {
+      items.push({
+        name: c.name,
+        label: c.name + (c.description ? " · " + c.description : ""),
+        color: c.color,
+        count: counts[c.name] || 0,
+      });
+    });
+
+    items.forEach(function (item) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "collection-chip" + (state.activeCollection === item.name ? " active" : "");
+      chip.setAttribute("data-collection", item.name);
+      if (item.color) chip.style.setProperty("--chip-dot", item.color);
+
+      if (item.color) {
+        var dot = document.createElement("span");
+        dot.className = "dot";
+        chip.appendChild(dot);
+      }
+      var label = document.createElement("span");
+      label.textContent = item.label;
+      chip.appendChild(label);
+      var count = document.createElement("span");
+      count.className = "count";
+      count.textContent = String(item.count);
+      chip.appendChild(count);
+
+      chip.addEventListener("click", function () {
+        state.activeCollection = item.name;
+        Array.prototype.forEach.call(bar.children, function (el) {
+          el.classList.toggle("active", el.getAttribute("data-collection") === item.name);
+        });
+        applyCollectionFilter();
+      });
+      bar.appendChild(chip);
+    });
+  }
+
+  function computeCollectionCounts() {
+    var out = {};
+    state.entries.forEach(function (e) {
+      var c = e.collection || "default";
+      out[c] = (out[c] || 0) + 1;
+    });
+    return out;
+  }
+
+  function applyCollectionFilter() {
+    var active = state.activeCollection;
+    state.cards.forEach(function (card) {
+      var matches =
+        active === "__all__" || (card.entry.collection || "default") === active;
+      card.el.style.display = matches ? "" : "none";
+    });
+  }
+
   function loadSpeechBody(file) {
     if (bodyCache[file]) return bodyCache[file];
     var p = fetch(file + "?v=2", { cache: "no-store" })
@@ -144,6 +220,8 @@
     cards: new Map(), // date -> {el, entry, body, isToday}
     searchTokens: [],
     searchActive: false,
+    collections: [], // [{name, description, color}]
+    activeCollection: "__all__", // "__all__" or collection name
   };
 
   function makeCardEl(entry, opts) {
@@ -162,6 +240,19 @@
     title.className = "card-title";
     title.textContent = entry.title;
     left.appendChild(title);
+
+    // collection label (always show, helps user identify the collection at a glance)
+    var collectionName = entry.collection || "default";
+    if (collectionName && collectionName !== "default") {
+      var coll = state.collections.find(function (c) { return c.name === collectionName; });
+      var color = coll ? coll.color : "#2f7d6b";
+      var labelEl = document.createElement("span");
+      labelEl.className = "collection-label";
+      labelEl.textContent = collectionName;
+      labelEl.style.setProperty("--chip-bg", hexToBg(color));
+      labelEl.style.setProperty("--chip-fg", color);
+      left.appendChild(labelEl);
+    }
 
     if (isToday) {
       var badge = document.createElement("span");
@@ -307,14 +398,21 @@
     var tokens = state.searchTokens;
     var active = tokens.length > 0;
     state.searchActive = active;
+    var activeCollection = state.activeCollection || "__all__";
+
+    function inActiveCollection(card) {
+      return (
+        activeCollection === "__all__" ||
+        (card.entry.collection || "default") === activeCollection
+      );
+    }
 
     if (!active) {
       // restore default
       setStatus("");
       state.cards.forEach(function (card) {
-        card.el.style.display = "";
+        card.el.style.display = inActiveCollection(card) ? "" : "none";
         card.setHighlight([]);
-        // if body was rendered with highlights, re-render plain and restore expand state
         if (card.bodyLoaded) {
           loadSpeechBody(card.entry.file).then(function (r) {
             card.renderBody(r.body, []);
@@ -339,10 +437,14 @@
     }
 
     // active search: for each card, fetch body if needed, render with highlights,
-    // expand on hit, hide on miss.
+    // expand on hit, hide on miss. Also respect active collection filter.
     var hits = 0;
     var pending = [];
     state.cards.forEach(function (card) {
+      if (!inActiveCollection(card)) {
+        card.el.style.display = "none";
+        return;
+      }
       var p = loadSpeechBody(card.entry.file).then(function (r) {
         var matched = entryMatches(card.entry, r.body, tokens);
         if (matched) {
@@ -393,7 +495,10 @@
   function bootstrap() {
     var today = todayInShanghai();
     state.today = today;
-    fetch("speeches/manifest.json?v=2", { cache: "no-store" })
+    var collectionsP = fetch("speeches/collections.json?v=2", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+    var manifestP = fetch("speeches/manifest.json?v=2", { cache: "no-store" })
       .then(function (r) {
         if (r.status === 404) {
           showEmpty("暂无内容，等待每日 06:30 自动生成。");
@@ -401,8 +506,15 @@
         }
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
-      })
-      .then(function (manifest) {
+      });
+    Promise.all([collectionsP, manifestP])
+      .then(function (results) {
+        var collectionsDoc = results[0];
+        var manifest = results[1];
+        state.collections =
+          (collectionsDoc && Array.isArray(collectionsDoc.collections))
+            ? collectionsDoc.collections
+            : [{ name: "default", description: "默认合集", color: "#2f7d6b" }];
         if (!manifest) return;
         var entries = (manifest.entries || []).slice();
         entries.sort(function (a, b) {
@@ -420,7 +532,6 @@
           state.cards.set(entry.date, card);
           root.appendChild(card.el);
           if (isToday) {
-            // pre-render today
             loadSpeechBody(entry.file).then(function (r) {
               card.renderBody(r.body, []);
               card.setBodyHeight();
@@ -428,7 +539,7 @@
             });
           }
         });
-        // wire search after first paint
+        buildCollectionBar();
         if (searchInput) {
           searchInput.addEventListener("input", onSearchInput);
           searchInput.addEventListener("search", onSearchInput);

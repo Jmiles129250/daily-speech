@@ -85,6 +85,70 @@ header h1 {
   font-weight: 600;
 }
 
+#collection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 24px;
+  align-items: center;
+}
+
+.collection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.collection-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.collection-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.collection-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chip-dot, var(--accent));
+  flex-shrink: 0;
+}
+
+.collection-chip.active .dot {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.collection-chip .count {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.collection-label {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--chip-bg, rgba(47, 125, 107, 0.1));
+  color: var(--chip-fg, var(--accent));
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
 #speeches {
   display: flex;
   flex-direction: column;

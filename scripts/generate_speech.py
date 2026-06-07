@@ -230,10 +230,12 @@ def write_speech_file(date_str: str, title: str, body: str) -> Path:
     out_path = SPEECHES_DIR / f"{date_str}.md"
     # Avoid YAML-breaking strings: keep title single line, no special quoting needed.
     safe_title = title.replace("\n", " ").strip()
+    collection = os.environ.get("COLLECTION", "default").strip() or "default"
     frontmatter = (
         "---\n"
         f"date: {date_str}\n"
         f"title: {safe_title}\n"
+        f"collection: {collection}\n"
         "---\n\n"
     )
     out_path.write_text(frontmatter + body.strip() + "\n", encoding="utf-8")
