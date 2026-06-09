@@ -51,3 +51,20 @@ jobs:
           WECHAT_WEBHOOK: ${{ secrets.WECHAT_WEBHOOK }}
         run: python scripts/notify.py
 
+      - name: Trigger Pages deploy
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # After the generate job commits + pushes the new speech, dispatch
+          # the deploy workflow so Pages redeploys. We do this explicitly
+          # (rather than relying on a 'push' trigger on deploy.yml) because
+          # GitHub's push-event routing has been observed to skip newly-added
+          # workflows for the very push that registered them.
+          curl -s -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -d '{"ref":"main"}' \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/deploy.yml/dispatches"
+          echo "deploy workflow dispatched"
+
