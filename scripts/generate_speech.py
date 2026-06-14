@@ -204,14 +204,33 @@ def call_llm(messages: list[dict], temperature: float = 0.9) -> str:
     raise RuntimeError(f"LLM request failed: {last_err}")
 
 
-def build_user_prompt(date_str: str, forbidden_titles: list[str]) -> str:
+def build_user_prompt(date_str: str, entries: list[dict]) -> str:
+    # Recent entries come from index.json (already sorted desc by date by
+    # build_index.py). Surface the last 14 days' (date, title, excerpt)
+    # to the model so it can avoid same-person / same-event / same-theme
+    # collisions, not just title-string collisions.
+    forbidden_titles = [e.get("title", "").strip() for e in entries if e.get("title")]
     forbidden_block = ""
-    if forbidden_titles:
-        recent = forbidden_titles[-30:]
-        quoted = "、".join(f"《{t}》" for t in recent)
+    recent_history = []
+    for e in entries[-14:]:
+        date = e.get("date", "")
+        title = (e.get("title") or "").strip()
+        excerpt = (e.get("excerpt") or "").strip()
+        if title and date:
+            recent_history.append((date, title, excerpt))
+    if recent_history:
+        lines = []
+        for d, t, ex in recent_history:
+            line = f"- {d} 《{t}》"
+            if ex:
+                line += f" | 摘要: {ex[:80]}"
+            lines.append(line)
         forbidden_block = (
-            f"\n\n注意:以下是最近已用过的标题,本次请避免重复或近义改写:\n"
-            f"{quoted}"
+            "\n\n以下是最近 14 天的已发表演讲稿(标题 + 摘要)。本次必须选一个"
+            "**不同的人物 / 不同的事件 / 不同的年代 / 不同的桶**来讲,避免:"
+            "(1) 标题重复或近义;(2) 主角重复(同一历史人物一个月内不再出现);"
+            "(3) 主题/论点重复(同一管理学或人生道理不能再讲)。\n"
+            + "\n".join(lines)
         )
     # Rotate the suggestion pool by day-of-year so consecutive days
     # pull from different eras / classics and we get variety.
@@ -335,9 +354,8 @@ def main() -> int:
         print(f"[force] regenerating {out_path.relative_to(REPO_ROOT)} for {date_str}")
 
     entries = load_index_entries()
-    forbidden_titles = collect_forbidden_titles(entries)
 
-    user_prompt = build_user_prompt(date_str, forbidden_titles)
+    user_prompt = build_user_prompt(date_str, entries)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
